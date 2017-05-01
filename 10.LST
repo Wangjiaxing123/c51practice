@@ -1,0 +1,145 @@
+C51 COMPILER V9.00   10                                                                    05/01/2017 22:04:54 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE 10
+OBJECT MODULE PLACED IN 10.OBJ
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE 10.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND TABS(2)
+
+line level    source
+
+   1          /***********************************************************
+   2          STC90C51RD+与HC-06蓝牙连线：
+   3            蓝牙  STC90C51RD+
+   4            RXD    TXD
+   5            TXD    RXD
+   6          其他连线：
+   7            P2.0、P2.1、P2.3分别接一个指示灯
+   8          
+   9          ！！！！
+  10          ！！！！注意：若单片机TXD（P3.1）无上拉能力，必须在P3.1端接上拉电阻。本次测试需要接上拉电阻
+  11          ！！！！
+  12          
+  13          手机采用蓝牙串口通信助手
+  14          最后已改用Android自编蓝牙通信软件
+  15                    By itas109
+  16                    http://blog.csdn.net/itas109
+  17          ***********************************************************/
+  18          #include <reg52.h>
+  19          #include <intrins.h>
+  20          unsigned char tmp;
+  21          unsigned int c=0;
+  22          
+  23          sbit led1=P2^0;       //指示灯0
+  24          sbit led2=P2^1;     //指示灯1
+  25          sbit led3=P2^3;     //指示灯3
+  26          
+  27          void init();   //串口初始化
+  28          void send(unsigned char a); //单字节发送函数
+  29          void ctrl(); //接收处理函数
+  30          
+  31          void main()
+  32          {
+  33   1          init();
+  34   1                while(1)
+  35   1                {         
+  36   2                        if(RI==1)                     // 是否有数据到来
+  37   2                        {
+  38   3                         RI = 0;
+  39   3                        tmp=0;
+  40   3                        tmp = SBUF;                   // 暂存接收到的数据
+  41   3                ctrl();
+  42   3                }       
+  43   2                }
+  44   1      }
+  45          
+  46           void init()  //串口初始化
+  47           {
+  48   1            ES=0;                 //关中断
+  49   1            SCON = 0x50;                        // REN=1允许串行接受状态，串口工作模式1,
+  50   1                              //10位UART（1位起始位，8位数据位，1位停止位，无奇偶校验），波特率可变
+  51   1      
+  52   1            TMOD = 0x20;                        // 定时器1工作于方式2，8位自动重载模式, 用于产生波特率
+  53   1                TH1=TL1=0xFD;                       // 波特率9600 （本次测试采用晶振为11.0592）
+  54   1                
+  55   1                PCON &= 0x7f;                       // 波特率不倍增
+C51 COMPILER V9.00   10                                                                    05/01/2017 22:04:54 PAGE 2   
+
+  56   1                TR1 = 1;                //定时器1开始工作，产生波特率
+  57   1                              //发送标志位置0
+  58   1            TI=0;                 //接收标志位置0
+  59   1            RI=0;
+  60   1            
+  61   1            //EA=0;
+  62   1              ES=1;
+  63   1      
+  64   1      
+  65   1                led1=0;                            //初始化设置3个指示灯全亮
+  66   1            led2=0;
+  67   1            led3=0;
+  68   1       }
+  69             
+  70          void send(unsigned char a)  //单字节数据发送
+  71          {             //注意：若单片机TXD（P3.1）无上拉能力，必须在P3.1端接上拉电阻。本次测试需要接上拉电阻
+  72   1        TI=0; 
+  73   1        SBUF=a;
+  74   1        while(TI==0);
+  75   1        TI=0;
+  76   1      
+  77   1        if(c%2)         //发送指示灯标志，每接收一次，此灯亮灭交替
+  78   1         led3=1;
+  79   1        else
+  80   1         led3=0;
+  81   1        c++;
+  82   1      } 
+  83          
+  84          void ctrl()               //接收处理函数
+  85          {
+  86   1                  switch(tmp)
+  87   1                {
+  88   2                    case 0x01:
+  89   2                  led1=0;               
+  90   2                  led2=1;
+  91   2                  led3=1;
+  92   2                  send(tmp);
+  93   2                  break;          
+  94   2                case 0x02:          
+  95   2                   led1=1;               
+  96   2                  led2=0;
+  97   2                  led3=1; 
+  98   2                   send(tmp);
+  99   2                   break;
+ 100   2                case 0x03:           
+ 101   2                   led1=1;               
+ 102   2                  led2=1;
+ 103   2                  led3=0;
+ 104   2                   send(tmp);
+ 105   2                   break;
+ 106   2                case 0x04:          
+ 107   2                   led1=0;                
+ 108   2                  led2=0;
+ 109   2                  led3=0;
+ 110   2                    send(tmp);
+ 111   2                    break;
+ 112   2                default:                  
+ 113   2                    led1=1;
+ 114   2                    led2=1;
+ 115   2                    led3=1;
+ 116   2                    send(tmp);
+ 117   2                }
+C51 COMPILER V9.00   10                                                                    05/01/2017 22:04:54 PAGE 3   
+
+ 118   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    132    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      3    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
